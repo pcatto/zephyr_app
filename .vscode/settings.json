@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "__assert.h": "c",
+        "toolchain.h": "c",
+        "gpio.h": "c",
+        "device.h": "c",
+        "kernel.h": "c",
+        "kernel_includes.h": "c"
+    }
+}
