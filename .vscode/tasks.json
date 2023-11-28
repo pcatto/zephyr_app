@@ -9,7 +9,7 @@
 				"isDefault": true
 			},
 			"linux": {
-				"command": "${userHome}/zephyr_workspace/zephyr_app/build.sh"
+				"command": "${workspaceFolder}/build.sh"
 			},
 			"windows": {
 				
@@ -28,7 +28,7 @@
 			"label": "West Flash",
 			"type": "shell",
 			"linux": {
-				"command": "${userHome}/zephyr_workspace/zephyr_app/flash.sh"
+				"command": "${workspaceFolder}/flash.sh"
 			},
 			"windows": {
 				
