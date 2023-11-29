@@ -5,6 +5,7 @@
         "gpio.h": "c",
         "device.h": "c",
         "kernel.h": "c",
-        "kernel_includes.h": "c"
+        "kernel_includes.h": "c",
+        "*.tcc": "c"
     }
 }
