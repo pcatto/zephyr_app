@@ -5,6 +5,10 @@
         "gpio.h": "c",
         "device.h": "c",
         "kernel.h": "c",
-        "kernel_includes.h": "c"
+        "kernel_includes.h": "c",
+        "syscall.h": "c",
+        "kobject.h": "c",
+        "log.h": "c",
+        "shell.h": "c"
     }
 }

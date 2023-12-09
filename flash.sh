@@ -2,5 +2,5 @@
 
 cd ~/zephyrproject
 source .venv/bin/activate
-west flash -d ~/zephyr_workspace/zephyr_app/build/
+west flash -d ~/Documents/SE/zephyr_app/build/
 

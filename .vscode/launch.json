@@ -3,8 +3,8 @@
 	"configurations": [
 	    {
 		"name": "Launch",
-		"device": "STM32G474RE",
-		"cwd": "${userHome}/zephyr_workspace/zephyr_app/",
+		"device": "STM32G431RB",
+		"cwd": "${userHome}/Documents/SE/zephyr_app/",
 		"executable": "build/zephyr/zephyr.elf",
 		"request": "launch",
 		"type": "cortex-debug",
@@ -21,8 +21,8 @@
 	    },
 	    {
 		"name": "Attach",
-		"device": "STM32G474RE",
-		"cwd": "${userHome}/zephyr_workspace/zephyr_app/",
+		"device": "STM32G431RB",
+		"cwd": "${userHome}/Documents/SE/zephyr_app/",
 		"executable": "build/zephyr/zephyr.elf",
 		"toolchainPrefix": "arm-zephyr-eabi",
 		"request": "attach",
