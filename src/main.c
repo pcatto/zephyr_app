@@ -8,12 +8,19 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/shell/shell.h>
 #include <inttypes.h>
-
 #include <string.h>
 
+
+
 #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
+
+#define ARCH_STACK_PTR_ALIGN 8
+#define CONFIG_SYS_CLOCK_TICKS_PER_SEC 1000
+
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
@@ -71,24 +78,24 @@ void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
 	}
 }
 
-void blink0(void)
+void blink0(struct k_work *)
 {
 	blink(&led0, 200, 0);
 }
 
 static struct k_work blink_work;
 
-void blink_work_handler(struct k_work *work) {
-    static int cnt = 0;
+// void blink_work_handler(struct k_work *work) {
+//     static int cnt = 0;
 
-    // Alterna o estado do LED
-    gpio_pin_set(led0.spec.port, led0.spec.pin, cnt % 2);
-    cnt++;
+//     // Alterna o estado do LED
+//     gpio_pin_set(led0.spec.port, led0.spec.pin, cnt % 2);
+//     cnt++;
 
-    // Reagenda a si mesma para continuar piscando
-		k_work_submit(&blink_work);
+//     // Reagenda a si mesma para continuar piscando
+// 		k_work_submit(&blink_work);
 
-}
+// }
 
 
 //K_THREAD_DEFINE(blink0_id, STACKSIZE, blink0, NULL, NULL, NULL,PRIORITY, 0, 0);
@@ -144,46 +151,116 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb,
 
 // ------------------ end button ------------------
 
+static void button_init(void){
+	int ret;
 
+	// Configura o pino do botão como entrada
+	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
+	if (ret != 0) {
+		printk("Error %d: failed to configure pin %d '%s'\n",
+			ret, button.pin, button.port->name);
+		return;
+	}
+
+	// Configura o pino do botão com resistor de pull-up
+	ret = gpio_pin_configure_dt(&button, GPIO_INPUT | GPIO_PULL_UP);
+	if (ret != 0) {
+		printk("Error %d: failed to configure pin %d '%s'\n",
+			ret, button.pin, button.port->name);
+		return;
+	}
+
+	// Configura o pino do botão com interrupção
+	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_BOTH);
+	if (ret != 0) {
+		printk("Error %d: failed to configure interrupt on pin %d '%s'\n",
+			ret, button.pin, button.port->name);
+		return;
+	}
+
+	// Configura a função de callback para o botão
+	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
+
+	// Associa a função de callback ao pino do botão
+	ret = gpio_add_callback(button.port, &button_cb_data);
+	if (ret != 0) {
+		printk("Error %d: failed to add callback for pin %d '%s'\n",
+			ret, button.pin, button.port->name);
+		return;
+	}
+
+	// Habilita as interrupções para o pino do botão
+	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_BOTH);
+	if (ret != 0) {
+		printk("Error %d: failed to configure interrupt on pin %d '%s'\n",
+			ret, button.pin, button.port->name);
+		return;
+	}
+}
+
+
+
+
+// K_THREAD_DEFINE(blink0_id, STACKSIZE, blink0, NULL, NULL, NULL,PRIORITY, 0, 0);
+K_THREAD_DEFINE(button_id, STACKSIZE, button_init, NULL, NULL, NULL,PRIORITY, 0, 0);
+
+
+K_WORK_DEFINE(blink0_id, blink0);
+
+
+// ------------------- SHELL -------------------
+
+// Função que realiza a FFT
+void perform_fft(double val1, double val2) {
+    // Aqui você colocaria o código para realizar a FFT nos valores
+    printk("Realizando FFT em %f e %f\n", val1, val2);
+
+    // Exemplo: imprimir valores fictícios de FFT
+    printk("Resultado da FFT: [%.2f, %.2f]\n", val1 * 2, val2 * 2);
+}
+
+// Callback para o comando de shell
+static int cmd_fft(const struct shell *shell, size_t argc, char **argv) {
+    if (argc != 3) {
+        printk("Uso: fft <val1> <val2>");
+        return -EINVAL;
+    }
+
+		shell_print(shell, "Executando FFT em %s e %s", argv[1], argv[2]);
+
+    double val1 = strtod(argv[1], NULL);
+    double val2 = strtod(argv[2], NULL);
+
+    perform_fft(val1, val2);
+
+		k_msleep(200);
+
+    return 0;
+}
+
+// SHELL_CMD_ARG_REGISTER(fft, NULL, "Executa FFT em dois valores", cmd_fft, 1, 0);
+
+// Registro do comando de shell
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_fft,
+    SHELL_CMD(fft, NULL, "Executa FFT em dois valores", cmd_fft),
+    SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_REGISTER(fft, &sub_fft, "Comandos de FFT", NULL);
+
+
+
+
+// ------------------- SHELL -------------------
 
 int main(void)
 {
 	// ------------------ start button ------------------
 
-	int ret;
 
-	if (!gpio_is_ready_dt(&button)) {
-		printk("Error: button device %s is not ready\n",
-		       button.port->name);
-		return 0;
-	}
-
-	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
-	if (ret != 0) {
-		printk("Error %d: failed to configure %s pin %d\n",
-		       ret, button.port->name, button.pin);
-		return 0;
-	}
-
-	ret = gpio_pin_interrupt_configure_dt(&button,
-					      GPIO_INT_EDGE_TO_ACTIVE);
-	if (ret != 0) {
-		printk("Error %d: failed to configure interrupt on %s pin %d\n",
-			ret, button.port->name, button.pin);
-		return 0;
-	}
-
-	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
-	gpio_add_callback(button.port, &button_cb_data);
-	printk("Set up button at %s pin %d\n", button.port->name, button.pin);
-
-
-
-	// Inicializa o objeto de trabalho
-	k_work_init(&blink_work, blink_work_handler);
 
 	// Submete a função de trabalho para sua primeira execução
-	k_work_submit(&blink_work);
+	k_work_submit(&blink0_id);
 
 
 	// ------------------- end button -------------------
